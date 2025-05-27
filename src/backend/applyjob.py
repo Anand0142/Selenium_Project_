@@ -17,20 +17,20 @@ import queue
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 # Configuration
-SUPABASE_URL = "https://vjmlbzcssyywmeapaxds.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbWxiemNzc3l5d21lYXBheGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5ODMzNDUsImV4cCI6MjA2MDU1OTM0NX0.dHdMxjhT9MjRDVpzoIiOo6zD23iF45YIZH9iACD4ZwY"
+SUPABASE_URL = "YOUR_PROJECT_URL"
+SUPABASE_KEY = "YOUR_ANON_KEY"
 
 # LinkedIn credentials
-LINKEDIN_EMAIL = "23215A6704@bvrit.ac.in"
-LINKEDIN_PASSWORD = "Anand 0608"
+LINKEDIN_EMAIL = "LINKEDIN_EMAIL"
+LINKEDIN_PASSWORD = "LINKEDIN_PASSWORD"
 
 # External website credentials
-EXTERNAL_EMAIL = "kammarianand20@gmail.com"
-EXTERNAL_PASSWORD = "Anand 0142"
+EXTERNAL_EMAIL = "YOUR_MAIL"
+EXTERNAL_PASSWORD = "YOUR_PASSWORD"
 
 # Indeed credentials
-INDEED_EMAIL = "kammarianand20@gmailcom"
-INDEED_PASSWORD = "Anand 0142"
+INDEED_EMAIL = "YOUR_MAIL"
+INDEED_PASSWORD = "YOUR_PASSWORD"
 
 # Initialize Supabase client
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
