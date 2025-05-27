@@ -10,13 +10,13 @@ import requests
 import time
 
 # Configuration
-SUPABASE_URL = "https://vjmlbzcssyywmeapaxds.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbWxiemNzc3l5d21lYXBheGRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDk4MzM0NSwiZXhwIjoyMDYwNTU5MzQ1fQ.LHBfxribxUXKJh7z3hSAeBIbojqDNhTSmYONS15eu4A"
-GEMINI_API_KEY = "AIzaSyCVPaOjrxoFJWKAhvurEXgTz7HSCcs5rJ4"
+SUPABASE_URL = "YOUR_SUPABASE_URL"
+SUPABASE_KEY = "SUPABASE_KEY"
+GEMINI_API_KEY = "YOUR_GEMINI_KEY"
 MODEL_NAME = "models/gemini-1.5-pro-latest"
 
 # JSearch API config
-JSEARCH_API_KEY = "0402f54bc1mshaa51200e8153a83p1f8b56jsn936393477654"
+JSEARCH_API_KEY = "YOUR_API_KEY"
 JSEARCH_HEADERS = {
     "X-RapidAPI-Key": JSEARCH_API_KEY,
     "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
