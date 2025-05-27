@@ -60,12 +60,52 @@ def match_skills_spacy(text, skills):
     return matched
 
 def search_jobs(skill, limit=10):
-    url = "https://jsearch.p.rapidapi.com/search"
-    querystring = {"query": skill, "num_pages": "1"}
-    response = requests.get(url, headers=HEADERS, params=querystring)
-    if response.status_code == 200:
-        return response.json().get("data", [])[:limit]
-    return []
+    """Search for jobs using JSearch API with LinkedIn filtering"""
+    try:
+        url = "https://jsearch.p.rapidapi.com/search"
+        querystring = {
+            "query": f"{skill} jobs on LinkedIn",
+            "num_pages": "1",
+            "page": "1"
+        }
+        
+        response = requests.get(url, headers=HEADERS, params=querystring)
+        response.raise_for_status()  # Raise exception for bad status codes
+        
+        jobs = response.json().get("data", [])
+        
+        # Filter for LinkedIn jobs
+        linkedin_jobs = [
+            job for job in jobs 
+            if "linkedin.com" in job.get("job_apply_link", "").lower()
+        ]
+        
+        # Additional filtering for quality
+        filtered_jobs = []
+        for job in linkedin_jobs[:limit]:
+            # Skip jobs with missing critical information
+            if not all([
+                job.get("job_title"),
+                job.get("employer_name"),
+                job.get("job_description"),
+                job.get("job_apply_link")
+            ]):
+                continue
+                
+            # Skip jobs with invalid apply links
+            if job.get("job_apply_link", "").strip() == "#":
+                continue
+                
+            filtered_jobs.append(job)
+            
+        return filtered_jobs
+        
+    except requests.exceptions.RequestException as e:
+        print(f"⚠ API request error: {str(e)}")
+        return []
+    except Exception as e:
+        print(f"⚠ Error searching jobs: {str(e)}")
+        return []
 
 def find_and_store_jobs():
     skill_map = fetch_resume_skills()
@@ -80,44 +120,46 @@ def find_and_store_jobs():
         for skill in skills:
             if matched_count >= 3:
                 break
-            jobs = search_jobs(skill)
-            time.sleep(1)  # Prevent API rate limit
+                
+            try:
+                jobs = search_jobs(skill)
+                time.sleep(1)  # Prevent API rate limit
 
-            for job in jobs:
-                if matched_count >= 3:
-                    break
-                link = job.get("job_apply_link")
-                if not link or link.strip() == "#":
-                    continue
+                for job in jobs:
+                    if matched_count >= 3:
+                        break
 
-                title = job.get("job_title", "N/A")
-                company = job.get("employer_name", "N/A")
-                desc = job.get("job_description", "")
-
-                matched = match_skills_spacy(desc, skills)
-                if matched:
-                    job_data = {
-                        "user_id": user_id,
-                        "resume_id": resume_id,  # ✅ Include resume_id
-                        "title": title,
-                        "company": company,
-                        "description": desc,
-                        "job_link": link
-                    }
-                    matched_jobs.append(job_data)
-                    matched_count += 1
+                    desc = job.get("job_description", "")
+                    matched = match_skills_spacy(desc, skills)
+                    
+                    if matched:
+                        job_data = {
+                            "user_id": user_id,
+                            "resume_id": resume_id,
+                            "title": job.get("job_title", "N/A"),
+                            "company": job.get("employer_name", "N/A"),
+                            "description": desc,
+                            "job_link": job.get("job_apply_link"),
+                            "created_at": job.get("job_posted_at_datetime_utc")
+                        }
+                        matched_jobs.append(job_data)
+                        matched_count += 1
+                        
+            except Exception as e:
+                print(f"⚠ Error processing skill {skill}: {str(e)}")
+                continue
 
         if matched_jobs:
             try:
                 supabase.table("jobs").insert(matched_jobs).execute()
                 total_jobs_stored += len(matched_jobs)
-                print(f"✅ Stored {len(matched_jobs)} jobs for resume ID {resume_id}")
+                print(f"✅ Stored {len(matched_jobs)} LinkedIn jobs for resume ID {resume_id}")
             except Exception as e:
                 print(f"❌ Error storing jobs: {e}")
         else:
-            print(f"⚠️ No jobs matched for resume ID {resume_id}")
+            print(f"⚠ No LinkedIn jobs matched for resume ID {resume_id}")
 
-    print(f"\n🎯 Total jobs stored: {total_jobs_stored}")
+    print(f"\n🎯 Total LinkedIn jobs stored: {total_jobs_stored}")
 
 if __name__ == "__main__":
     find_and_store_jobs()

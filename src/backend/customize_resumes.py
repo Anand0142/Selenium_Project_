@@ -11,13 +11,41 @@ import time
 
 # Configuration
 SUPABASE_URL = "https://vjmlbzcssyywmeapaxds.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbWxiemNzc3l5d21lYXBheGRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDk4MzM0NSwiZXhwIjoyMDYwNTU5MzQ1fQ.LHBfxribxUXKJh7z3hSAeBIbojqDNhTSmYONS15eu4A"  # Must have table read permissions
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbWxiemNzc3l5d21lYXBheGRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDk4MzM0NSwiZXhwIjoyMDYwNTU5MzQ1fQ.LHBfxribxUXKJh7z3hSAeBIbojqDNhTSmYONS15eu4A"
 GEMINI_API_KEY = "AIzaSyCVPaOjrxoFJWKAhvurEXgTz7HSCcs5rJ4"
 MODEL_NAME = "models/gemini-1.5-pro-latest"
+
+# JSearch API config
+JSEARCH_API_KEY = "0402f54bc1mshaa51200e8153a83p1f8b56jsn936393477654"
+JSEARCH_HEADERS = {
+    "X-RapidAPI-Key": JSEARCH_API_KEY,
+    "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+}
 
 # Initialize clients
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 genai.configure(api_key=GEMINI_API_KEY)
+
+def fetch_job_description(job_id):
+    """Fetch job description from Supabase or JSearch API"""
+    try:
+        # First try to get from Supabase
+        job = supabase.table("jobs").select("*").eq("id", job_id).execute()
+        if job.data:
+            return job.data[0].get("description", "")
+            
+        # If not in Supabase, try JSearch API
+        url = "https://jsearch.p.rapidapi.com/job-details"
+        querystring = {"job_id": job_id}
+        response = requests.get(url, headers=JSEARCH_HEADERS, params=querystring)
+        response.raise_for_status()
+        
+        job_data = response.json().get("data", {})
+        return job_data.get("job_description", "")
+        
+    except Exception as e:
+        print(f"⚠️ Error fetching job description: {str(e)}")
+        return ""
 
 def preserve_structure_customize(original_doc, job_desc):
     """Customizes resume while preserving exact structure"""
@@ -91,8 +119,14 @@ def process_resumes():
                 for job in jobs:
                     print(f"\n🔧 Enhancing resume {resume['id'][:8]} for job {job['id'][:8]}")
                     
+                    # Get job description
+                    job_desc = fetch_job_description(job['id'])
+                    if not job_desc:
+                        print(f"⚠️ No job description found for job {job['id']}")
+                        continue
+                    
                     # Customize while preserving structure
-                    customized_text = preserve_structure_customize(original_doc, job['description'])
+                    customized_text = preserve_structure_customize(original_doc, job_desc)
                     
                     # Rebuild document with original structure
                     new_doc = Document()
@@ -107,7 +141,7 @@ def process_resumes():
                         if 'skills' in para.text.lower():
                             for run in para.runs:
                                 if any(kw.lower() in run.text.lower() 
-                                      for kw in job['description'].split()[:20]):  # Simple keyword matching
+                                      for kw in job_desc.split()[:20]):  # Simple keyword matching
                                     run.bold = True
                     
                     # Upload
